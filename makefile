@@ -163,7 +163,7 @@ fresh-install:
 	@echo "Menyiapkan file environment..."
 	@cp env.example .env 2>/dev/null || true
 	@echo "Memulai proses build dan instalasi dependency..."
-	up-build wait-db install key permission migrate filament-install sanctum-install livewire-install tailwind-install npm-build seed filament-assets filament-user seed-production ## Setup project dari nol: build, install semua dependency, migrate, seed
+	@$(MAKE) up-build wait-db install key permission migrate filament-install sanctum-install livewire-install tailwind-install npm-build seed filament-assets filament-user seed-production
 	@echo "Instalasi selesai! Akses di http://localhost:8000"
 
 clean: ## Hentikan container & hapus volume (database ikut terhapus)

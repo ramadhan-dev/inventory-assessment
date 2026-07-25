@@ -153,6 +153,18 @@ wait-db: ## Tunggu sampai MySQL benar-benar siap menerima koneksi
 	@echo " MySQL siap."
 
 
+seed-production: ## Injeksi 1.2 juta row untuk testing performa (Section D)
+	@echo "  Warning: Proses ini memakan waktu 5-10 menit..."
+	docker compose exec -T mysql mysql -ularavel -plaravel inventory_assessment < sql-seed-data/generate_production_data.sql
+
+
+#  Skenario "Laptop Baru" & Cleanup
+fresh-install: up-build wait-db install key permission migrate filament-install sanctum-install livewire-install tailwind-install npm-build seed filament-assets filament-user seed-production ## Setup project dari nol: build, install semua dependency, migrate, seed
+	@echo " Instalasi selesai! Akses di http://localhost:8000"
+
+
+
+
 clean: ## Hentikan container & hapus volume (database ikut terhapus)
 	docker compose down -v
 

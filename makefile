@@ -8,6 +8,7 @@
         install \
         key migrate migrate-fresh seed \
         cache-clear permission \
+        filament-install filament-user filament-assets \
         queue-restart wait-db \
          clean nuke reset install-all
 
@@ -86,6 +87,24 @@ cache-clear: ## Bersihkan semua cache Laravel
 
 permission: ## Perbaiki permission storage & bootstrap/cache
 	docker compose exec app chmod -R 775 storage bootstrap/cache
+
+
+
+#  Filament 
+filament-install: ## Install Filament panel (jalankan sekali di awal, aman dijalankan ulang)
+	docker compose exec app composer require filament/filament:"^3.2" -W
+	@if docker compose exec -T app test -f app/Providers/Filament/AdminPanelProvider.php; then \
+		echo "  Filament panel sudah terinstal, skip filament:install --panels"; \
+	else \
+		docker compose exec app php artisan filament:install --panels --no-interaction; \
+	fi
+	@docker compose exec -T app bash -c "test -L public/storage || php artisan storage:link"
+ 
+filament-user: ## Buat user admin baru untuk login ke panel Filament
+	docker compose exec app php artisan make:filament-user
+ 
+filament-assets: ## Publish/refresh asset Filament (jalankan setelah update versi)
+	docker compose exec app php artisan filament:assets
 
 
 

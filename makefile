@@ -94,7 +94,7 @@ permission: ## Perbaiki permission storage & bootstrap/cache
 
 #  Filament 
 filament-install: ## Install Filament panel (jalankan sekali di awal, aman dijalankan ulang)
-	docker compose exec app composer require filament/filament:"^3.2" -W
+	docker compose exec app composer require filament/filament:"^4.0" -W
 	@if docker compose exec -T app test -f app/Providers/Filament/AdminPanelProvider.php; then \
 		echo "  Filament panel sudah terinstal, skip filament:install --panels"; \
 	else \

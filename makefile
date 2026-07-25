@@ -9,6 +9,8 @@
         key migrate migrate-fresh seed \
         cache-clear permission \
         filament-install filament-user filament-assets \
+		sanctum-install \
+		livewire-install tailwind-install npm-dev npm-build \
         queue-restart wait-db \
          clean nuke reset install-all
 
@@ -106,6 +108,34 @@ filament-user: ## Buat user admin baru untuk login ke panel Filament
 filament-assets: ## Publish/refresh asset Filament (jalankan setelah update versi)
 	docker compose exec app php artisan filament:assets
 
+
+
+
+sanctum-install: ## Install Sanctum untuk API authentication (aman dijalankan ulang)
+	docker compose exec app composer require laravel/sanctum
+	@docker compose exec -T app bash -c "rm -f database/migrations/2026_07_25_091112_create_personal_access_tokens_table.php"
+	@if docker compose exec -T app bash -c "ls database/migrations/*_create_personal_access_tokens_table.php 2>/dev/null"; then \
+		echo "  Migration Sanctum sudah ada, skip vendor:publish"; \
+	else \
+		docker compose exec app php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"; \
+		docker compose exec app php artisan migrate; \
+	fi
+
+
+livewire-install: ## Install Livewire untuk reactive components (Section C)
+	docker compose exec app composer require livewire/livewire
+
+
+tailwind-install: ## Install Tailwind CSS v4 (Vite plugin) dan Alpine.js
+	docker compose exec app npm install tailwindcss @tailwindcss/vite
+	docker compose exec app npm install alpinejs
+	@echo "  Tailwind v4 terinstal. Pastikan vite.config.js sudah include plugin tailwindcss() dan resources/css/app.css berisi @import \"tailwindcss\";"
+
+npm-dev: ## Compile assets for development (watch mode)
+	docker compose exec app npm run dev
+
+npm-build: ## Compile assets for production
+	docker compose exec app npm run build
 
 
 

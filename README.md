@@ -535,6 +535,248 @@ app(WarehouseReportCacheService::class)->refreshWarehouseCache($warehouseId);
 app(WarehouseReportCacheService::class)->clearCache();
 ```
 
+## Section E: DevOps & Deployment
+
+Project ini menggunakan pendekatan **Docker** untuk deployment dengan konfigurasi lengkap untuk production environment.
+
+### Docker Architecture
+
+**Services:**
+- **app** - PHP-FPM 8.4 dengan Laravel application
+- **nginx** - Web server dengan reverse proxy configuration
+- **mysql** - MySQL 8.0 database
+- **redis** - Redis 7 untuk cache, session, dan queue
+- **worker** - Laravel queue worker untuk background jobs
+
+### Docker Configuration Files
+
+#### 1. docker-compose.yml
+Multi-container orchestration dengan:
+- Health checks untuk semua services
+- Volume persistence untuk MySQL dan Redis
+- Network isolation dengan custom bridge network
+- Auto-restart policy untuk production reliability
+- Dependency management antar services
+
+#### 2. Dockerfile (Multi-stage Build)
+**Stage 1: Composer Dependencies**
+- Install production-only PHP dependencies
+- Optimize autoloader
+
+**Stage 2: Node.js Frontend Assets**
+- Build Tailwind CSS, Alpine.js, Vite assets
+- Minify dan optimize untuk production
+
+**Stage 3: PHP-FPM Production Image**
+- Base image: php:8.4-fpm
+- PHP extensions: pdo_mysql, mbstring, exif, pcntl, bcmath, gd, zip, intl, opcache, redis
+- Security: Non-root user (laravel:laravel)
+- Hardening: Proper file permissions
+
+#### 3. nginx Configuration (docker/nginx/default.conf)
+**Features:**
+- SSL redirect (ready for HTTPS)
+- Gzip compression
+- Security headers:
+  - X-Frame-Options: SAMEORIGIN
+  - X-Content-Type-Options: nosniff
+  - X-XSS-Protection: 1; mode=block
+  - Referrer-Policy: strict-origin-when-cross-origin
+- Laravel-specific hardening:
+  - Block access to .env, .git, artisan, storage/logs
+  - Block access to hidden files
+- Client max body size: 10M
+
+#### 4. .env.docker Template
+Production-ready environment configuration dengan:
+- APP_ENV=production
+- APP_DEBUG=false
+- Strong password placeholders
+- Redis configuration untuk cache/session/queue
+- Mail configuration template
+- AWS S3 configuration (optional)
+
+### Deployment Steps
+
+#### 1. Prepare Environment
+```bash
+# Copy production environment template
+cp .env.docker .env
+
+# Edit .env with your production values
+nano .env
+```
+
+**Critical variables to update:**
+- `APP_KEY` - Generate dengan `php artisan key:generate`
+- `DB_PASSWORD` - Set strong password
+- `APP_URL` - Set production domain
+- `SESSION_DOMAIN` - Set cookie domain
+- Mail configuration - Set SMTP credentials
+
+#### 2. Build and Start Containers
+```bash
+# Build images (production mode)
+docker compose build
+
+# Start all services
+docker compose up -d
+
+# Check service status
+docker compose ps
+```
+
+#### 3. Run Migrations and Setup
+```bash
+# Enter app container
+docker compose exec app bash
+
+# Run migrations
+php artisan migrate --force
+
+# Cache configuration for production
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+# Optimize composer autoloader
+composer install --optimize-autoloader --no-dev
+
+# Create Filament admin user
+php artisan make:filament-user
+
+# Exit container
+exit
+```
+
+#### 4. Verify Deployment
+```bash
+# Check logs
+docker compose logs -f app
+docker compose logs -f nginx
+
+# Test application
+curl http://your-domain.com
+curl http://your-domain.com/admin
+```
+
+### Production Considerations
+
+#### SSL/HTTPS Setup
+Untuk production, tambahkan SSL certificate:
+
+**Option A: Let's Encrypt (Certbot)**
+```bash
+# Install certbot on host
+sudo apt install certbot python3-certbot-nginx
+
+# Generate certificate
+sudo certbot --nginx -d your-domain.com
+```
+
+**Option B: Custom SSL**
+Update `docker/nginx/default.conf`:
+```nginx
+server {
+    listen 443 ssl http2;
+    ssl_certificate /etc/nginx/ssl/cert.pem;
+    ssl_certificate_key /etc/nginx/ssl/key.pem;
+    # ... rest of config
+}
+```
+
+#### Backup Strategy
+```bash
+# Backup database
+docker compose exec mysql mysqldump -u laravel -p inventory_assessment > backup.sql
+
+# Backup volumes
+docker run --rm -v inventory-mysql-data:/data -v $(pwd):/backup alpine tar czf /backup/mysql-backup.tar.gz /data
+```
+
+#### Monitoring
+```bash
+# View resource usage
+docker stats
+
+# View logs
+docker compose logs --tail=100 -f
+
+# Health check
+docker compose ps
+```
+
+#### Scaling
+```bash
+# Scale worker (if needed)
+docker compose up -d --scale worker=3
+
+# Scale app (behind load balancer)
+docker compose up -d --scale app=2
+```
+
+### Maintenance Commands
+
+```bash
+# Restart services
+docker compose restart
+
+# Update application (pull changes)
+git pull
+docker compose build
+docker compose up -d
+
+# Clear Laravel cache
+docker compose exec app php artisan cache:clear
+docker compose exec app php artisan config:clear
+docker compose exec app php artisan route:clear
+docker compose exec app php artisan view:clear
+
+# Queue management
+docker compose exec worker php artisan queue:restart
+```
+
+### Troubleshooting
+
+#### Container won't start
+```bash
+# Check logs
+docker compose logs app
+
+# Rebuild without cache
+docker compose build --no-cache
+docker compose up -d
+```
+
+#### Database connection issues
+```bash
+# Verify MySQL is healthy
+docker compose exec mysql mysql -u laravel -p
+
+# Check network
+docker network inspect inventory-net
+```
+
+#### Permission issues
+```bash
+# Fix storage permissions
+docker compose exec app chown -R laravel:laravel storage bootstrap/cache
+docker compose exec app chmod -R 775 storage bootstrap/cache
+```
+
+### Security Checklist
+
+- [ ] Change all default passwords in .env
+- [ ] Set APP_DEBUG=false in production
+- [ ] Use strong APP_KEY
+- [ ] Enable SSL/HTTPS
+- [ ] Configure firewall rules
+- [ ] Regular database backups
+- [ ] Monitor logs for suspicious activity
+- [ ] Keep Docker images updated
+- [ ] Use secrets management for sensitive data
+- [ ] Restrict container resource usage
+
 ## Access Information
 
 Setelah instalasi selesai:

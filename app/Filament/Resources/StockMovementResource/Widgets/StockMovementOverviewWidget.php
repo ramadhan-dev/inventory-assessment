@@ -10,9 +10,18 @@ class StockMovementOverviewWidget extends BaseWidget
 {
     protected function getStats(): array
     {
-        $todayMovements = StockMovement::today()->count();
-        $inboundQuantity = StockMovement::today()->inbound()->sum('quantity');
-        $outboundQuantity = abs(StockMovement::today()->outbound()->sum('quantity'));
+        // Single query with conditional aggregation for all movement stats
+        $stats = StockMovement::whereDate('created_at', today())
+            ->selectRaw('
+                COUNT(*) as total_movements,
+                SUM(CASE WHEN movement_type = "in" THEN quantity ELSE 0 END) as inbound_quantity,
+                SUM(CASE WHEN movement_type = "out" THEN ABS(quantity) ELSE 0 END) as outbound_quantity
+            ')
+            ->first();
+
+        $todayMovements = $stats->total_movements ?? 0;
+        $inboundQuantity = $stats->inbound_quantity ?? 0;
+        $outboundQuantity = $stats->outbound_quantity ?? 0;
         $netMovement = $inboundQuantity - $outboundQuantity;
 
         return [

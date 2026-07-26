@@ -13,16 +13,30 @@ class DashboardOverviewWidget extends BaseWidget
 
     protected function getStats(): array
     {
-        // Total Active Products
-        $activeCount = Product::where('is_active', true)->count();
-        $totalCount = Product::count();
+        // Single query with conditional aggregation for product counts
+        $productStats = Product::selectRaw('
+            COUNT(*) as total,
+            SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active
+        ')->first();
+
+        $totalCount = $productStats->total ?? 0;
+        $activeCount = $productStats->active ?? 0;
         $percentage = $totalCount > 0 ? round(($activeCount / $totalCount) * 100, 1) : 0;
 
-        // Warehouse Capacity Summary
-        $totalWarehouses = Warehouse::count();
-        $activeWarehouses = Warehouse::where('is_active', true)->count();
-        $totalCapacity = (float) Warehouse::sum('capacity_m3');
-        $totalProductsInStock = (float) \Illuminate\Support\Facades\DB::table('product_warehouse')->sum('quantity_on_hand');
+        // Single query with conditional aggregation for warehouse counts and capacity
+        $warehouseStats = Warehouse::selectRaw('
+            COUNT(*) as total,
+            SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active,
+            SUM(capacity_m3) as total_capacity
+        ')->first();
+
+        $totalWarehouses = $warehouseStats->total ?? 0;
+        $activeWarehouses = $warehouseStats->active ?? 0;
+        $totalCapacity = (float) ($warehouseStats->total_capacity ?? 0);
+
+        // Calculate total products in stock using SQL aggregation
+        $totalProductsInStock = (float) \Illuminate\Support\Facades\DB::table('product_warehouse')
+            ->sum('quantity_on_hand');
         $totalUsedCapacity = $totalProductsInStock;
         $availableCapacity = max(0, $totalCapacity - $totalUsedCapacity);
         $utilizationPercent = $totalCapacity > 0

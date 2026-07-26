@@ -11,22 +11,32 @@ class ProductOverviewWidget extends BaseWidget
 {
     protected function getStats(): array
     {
-        $totalProducts = Product::count();
-        $activeCount = Product::where('is_active', true)->count();
+        // Single query with conditional aggregation for product counts
+        $productStats = Product::selectRaw('
+            COUNT(*) as total,
+            SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active
+        ')->first();
+
+        $totalProducts = $productStats->total ?? 0;
+        $activeCount = $productStats->active ?? 0;
         $percentage = $totalProducts > 0 ? round(($activeCount / $totalProducts) * 100, 1) : 0;
 
-        // Calculate total stock value: sum(unit_price * total_quantity_on_hand)
-        $totalValue = Product::get()
-            ->sum(function ($product) {
-                return $product->unit_price * $product->totalQuantityOnHand();
-            });
+        // Calculate total stock value using SQL aggregation (not loading all products to memory)
+        $totalValue = \Illuminate\Support\Facades\DB::table('products')
+            ->join('product_warehouse', 'products.id', '=', 'product_warehouse.product_id')
+            ->selectRaw('SUM(products.unit_price * product_warehouse.quantity_on_hand) as total_value')
+            ->value('total_value') ?? 0;
 
-        // Count warehouses that have at least one product with stock
-        $warehousesWithStock = Warehouse::whereHas('products', function ($query) {
-            $query->where('product_warehouse.quantity_on_hand', '>', 0);
-        })->count();
+        // Count warehouses with stock using JOIN instead of whereHas
+        $warehouseStats = Warehouse::selectRaw('
+            COUNT(*) as total,
+            COUNT(DISTINCT CASE WHEN pw.quantity_on_hand > 0 THEN pw.warehouse_id END) as with_stock
+        ')
+            ->leftJoin('product_warehouse as pw', 'warehouses.id', '=', 'pw.warehouse_id')
+            ->first();
 
-        $totalWarehouses = Warehouse::count();
+        $warehousesWithStock = $warehouseStats->with_stock ?? 0;
+        $totalWarehouses = $warehouseStats->total ?? 0;
 
         return [
             Stat::make('Total Products', $totalProducts)

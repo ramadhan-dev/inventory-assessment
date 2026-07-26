@@ -11,6 +11,12 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Widgets;
+use App\Filament\Widgets\DashboardOverviewWidget;
+use App\Filament\Widgets\ProductCategoryDistributionWidget;
+use App\Filament\Widgets\TopWarehousesByCapacityWidget;
+use App\Filament\Widgets\RecentStockMovementsWidget;
+use App\Filament\Widgets\StockoutAlertWidget;
+use App\Filament\Widgets\LowStockWarningWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -38,7 +44,12 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+                DashboardOverviewWidget::class,
+                ProductCategoryDistributionWidget::class,
+                TopWarehousesByCapacityWidget::class,
+                RecentStockMovementsWidget::class,
+                StockoutAlertWidget::class,
+                LowStockWarningWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

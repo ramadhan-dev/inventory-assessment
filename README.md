@@ -1,6 +1,6 @@
 # Inventory Assessment
 
-Aplikasi Inventory Assessment berbasis **Laravel** dengan admin panel **Filament**, autentikasi API via **Sanctum**, komponen reaktif **Livewire**, dan styling **Tailwind CSS v4**. Seluruh environment dijalankan menggunakan **Docker Compose** (app/PHP-FPM, nginx, MySQL, dan worker queue), dan dilengkapi `Makefile` untuk mempermudah operasional sehari-hari.
+Aplikasi Inventory Management System berbasis **Laravel 10+** dengan admin panel **Filament v4**, autentikasi API via **Sanctum**, komponen reaktif **Livewire**, dan styling **Tailwind CSS v4**. Seluruh environment dijalankan menggunakan **Docker Compose** (app/PHP-FPM, nginx, MySQL, dan worker queue), dan dilengkapi `Makefile` untuk mempermudah operasional sehari-hari.
 
 ## Daftar Isi
 
@@ -12,6 +12,9 @@ Aplikasi Inventory Assessment berbasis **Laravel** dengan admin panel **Filament
 - [Instalasi Manual (Step by Step)](#instalasi-manual-step-by-step)
 - [Perintah Makefile yang Tersedia](#perintah-makefile-yang-tersedia)
 - [Struktur Service Docker](#struktur-service-docker)
+- [Fitur yang Telah Diterapkan](#fitur-yang-telah-diterapkan)
+- [Teknologi & Tools yang Digunakan](#teknologi--tools-yang-digunakan)
+- [Query Optimization](#query-optimization)
 - [Troubleshooting](#troubleshooting)
 
 ## Prerequisite
@@ -19,7 +22,7 @@ Aplikasi Inventory Assessment berbasis **Laravel** dengan admin panel **Filament
 Semua OS membutuhkan tiga hal dasar:
 
 1. **Docker** & **Docker Compose** (v2, sudah terintegrasi sebagai `docker compose`, bukan `docker-compose`)
-2. **Git**
+2. **Git** (atau **GitButler** untuk version control modern)
 3. **GNU Make** (untuk menjalankan perintah-perintah di `Makefile`)
 
 Detail instalasi per OS ada di bawah ini.
@@ -39,8 +42,9 @@ Detail instalasi per OS ada di bawah ini.
    - Saat instalasi, pastikan opsi **"Use WSL 2 based engine"** dicentang.
    - Setelah terinstal, buka **Settings > Resources > WSL Integration** dan aktifkan integrasi untuk distro WSL yang dipakai (misalnya Ubuntu).
 
-3. **Git for Windows**
-   - Unduh dari [git-scm.com](https://git-scm.com/download/win)
+3. **Git for Windows** atau **GitButler**
+   - Git: Unduh dari [git-scm.com](https://git-scm.com/download/win)
+   - GitButler: Unduh dari [gitbutler.com](https://gitbutler.com/) (opsional, untuk version control modern)
 
 4. **GNU Make**
    Windows tidak menyertakan `make` secara default. Pilih salah satu cara:
@@ -70,8 +74,8 @@ Detail instalasi per OS ada di bawah ini.
    - Unduh dari [docker.com](https://www.docker.com/products/docker-desktop/) (pilih chip Apple Silicon atau Intel sesuai perangkat).
    - Docker Compose v2 sudah otomatis tersedia sebagai bagian dari Docker Desktop.
 
-2. **Git**
-   - Biasanya sudah terpasang bawaan macOS. Cek dengan:
+2. **Git** atau **GitButler**
+   - Git biasanya sudah terpasang bawaan macOS. Cek dengan:
 
      ```bash
      git --version
@@ -82,6 +86,8 @@ Detail instalasi per OS ada di bawah ini.
      ```bash
      brew install git
      ```
+
+   - GitButler: Unduh dari [gitbutler.com](https://gitbutler.com/) (opsional)
 
 3. **GNU Make**
    - macOS sudah menyertakan `make` bawaan (via Xcode Command Line Tools). Jika belum ada:
@@ -166,6 +172,12 @@ Setelah selesai, aplikasi bisa diakses di:
 
 ```
 http://localhost:8000
+```
+
+Admin panel Filament:
+
+```
+http://localhost:8000/admin
 ```
 
 ## Instalasi Manual (Step by Step)
@@ -279,10 +291,48 @@ Berdasarkan `Makefile`, project ini terdiri dari service berikut (didefinisikan 
 - **mysql** — database MySQL
 - **worker** — queue worker Laravel
 
-## Troubleshooting
 
-- **`make: command not found`** → Pastikan GNU Make sudah terinstal sesuai panduan [Prerequisite](#prerequisite) untuk OS Anda.
-- **Container MySQL belum siap saat migrate** → Jalankan `make wait-db` sebelum `make migrate`.
-- **Permission error di `storage/` atau `bootstrap/cache/`** → Jalankan `make permission`.
-- **Ingin mulai dari kondisi bersih total** → Jalankan `make nuke` lalu `make fresh-install`.
-- **Port bentrok (misalnya 8000 sudah dipakai)** → Sesuaikan port di `docker-compose.yml`, lalu jalankan ulang `make up-build`.
+## Teknologi & Tools yang Digunakan
+
+### Backend
+- **Laravel 10+** - PHP Framework
+- **PHP 8.2+** - Runtime
+- **MySQL 8.0** - Database
+- **Filament v4** - Admin Panel Framework
+- **Laravel Sanctum** - API Authentication
+- **Livewire** - Full-stack framework untuk dynamic UI
+- **Queue Worker** - Background job processing
+
+### Frontend
+- **Tailwind CSS v4** - Utility-first CSS framework
+- **Alpine.js** - Lightweight JavaScript framework
+- **Vite** - Build tool & asset bundler
+
+### DevOps & Infrastructure
+- **Docker** - Containerization
+- **Docker Compose v2** - Multi-container orchestration
+- **nginx** - Web server / reverse proxy
+- **PHP-FPM** - FastCGI Process Manager
+
+### Development Tools
+- **GitButler** - Version control (modern Git client)
+- **GNU Make** - Build automation (via Makefile)
+- **Composer** - PHP dependency manager
+- **npm** - Node.js package manager
+
+
+### Version Control
+
+Project ini menggunakan **GitButler** untuk version control. GitButler menyediakan interface modern untuk Git dengan fitur seperti:
+- Virtual branches
+- Stacked changes
+- Integrated diff viewer
+- Automatic conflict resolution
+
+## Access Information
+
+Setelah instalasi selesai:
+
+- **Application URL**: http://localhost:8000
+- **Admin Panel**: http://localhost:8000/admin
+- **Default Admin User**: Dibuat saat menjalankan `make filament-user`

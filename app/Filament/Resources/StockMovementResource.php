@@ -69,7 +69,10 @@ class StockMovementResource extends Resource
                 ->label('Quantity')
                 ->numeric()
                 ->required()
-                ->helperText('Positive for IN, negative for OUT/TRANSFER')
+                ->minValue(-999999)
+                ->maxValue(999999)
+                ->rule('not_in:0') // BR5: Movement qty ≠ 0
+                ->helperText('Positive for IN, negative for OUT/TRANSFER. Cannot be zero.')
                 ->default(1),
 
             TextInput::make('reference_number')

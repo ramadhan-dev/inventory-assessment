@@ -6,6 +6,7 @@ use App\Http\Controllers\API\ProductController;
 use App\Http\Controllers\API\StockMovementController;
 use App\Http\Controllers\API\WarehouseController;
 use App\Http\Controllers\API\StockReportController;
+use App\Http\Controllers\API\WarehouseReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,4 +46,9 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
 
     // Stock Report
     Route::get('/stock-report', [StockReportController::class, 'index']);
+    Route::get('/stock-report/uncached', [StockReportController::class, 'uncached']); // For performance comparison
+
+    // Warehouse Report (Section D Question 2)
+    Route::get('/warehouse-report', [WarehouseReportController::class, 'index']);
+    Route::get('/warehouse-report/eloquent', [WarehouseReportController::class, 'eloquent']);
 });

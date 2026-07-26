@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Services\WarehouseReportCacheService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\App;
 use Illuminate\Validation\ValidationException;
 
 class StockMovement extends Model
@@ -89,6 +91,10 @@ class StockMovement extends Model
                         'quantity_on_hand' => max(0, $movement->quantity),
                     ]);
                 }
+
+                // Section D Question 3: Refresh cache for affected warehouse
+                $cacheService = App::make(WarehouseReportCacheService::class);
+                $cacheService->refreshWarehouseCache($warehouse->id);
             }
         });
     }
